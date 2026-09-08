@@ -18,3 +18,7 @@ Thumbs.db
 # n8n local data and exports
 .n8n/
 *.workflow.local.json
+
+# Node
+node_modules/
+npm-debug.log*

@@ -1,0 +1,8 @@
+[Triggered] Synthetics monitor failure
+monitor-type:synthetic
+
+The service checkout-web is down
+
+Tags
+region: us-east-1
+env:prod

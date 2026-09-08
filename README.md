@@ -1,8 +1,40 @@
 # NOC Bot
 
+[![CI](https://github.com/JuanCoder23/noc-bot/actions/workflows/ci.yml/badge.svg)](https://github.com/JuanCoder23/noc-bot/actions/workflows/ci.yml)
+
 Automated first-line triage for infrastructure alerts in a 24/7 NOC, built as a self-hosted n8n workflow. It reads alerts from a Slack channel, deduplicates and classifies them, enriches what survives from observability APIs, asks an LLM for a diagnosis grounded in a runbook catalog, and answers in the alert's own Slack thread.
 
 It ran in production against a multi-region payments platform, handling on the order of a thousand alerts a month.
+
+## Running it
+
+The logic that decides what happens to an alert — parsing, deduplication, the
+response gate, priority scoring, prompt assembly and message rendering — is
+extracted from the workflow's code nodes into `src/`, so it runs and is tested
+without n8n, Datadog credentials, or a model API key.
+
+```bash
+npm test     # 166 assertions, no dependencies
+npm run demo # trace one sample alert through every stage
+```
+
+`npm run demo -- lambda-errors` traces any file in [`samples/alerts/`](samples/alerts).
+The enrichment calls are stubbed; everything else is the code that ran in production.
+
+### Repository layout
+
+| Path | What |
+|---|---|
+| `workflows/NOC_bot.json` | The n8n export — import this to actually run the pipeline |
+| `src/` | The code nodes extracted as modules, so they can be read and tested |
+| `test/` | Test suites and the dependency-free runner |
+| `samples/alerts/` | Synthetic Datadog alerts the tests and demo run against |
+| `scripts/validate-workflow.js` | CI guard: the export stays credential-free and its catalog stays synthetic |
+| `docs/architecture.md` | Data flow, error handling, known failure modes |
+
+The modules are extracted from the export rather than reimplemented, and CI
+checks the two do not drift apart — otherwise the tests would stop testing what
+actually runs.
 
 ## The problem
 
@@ -96,6 +128,7 @@ The output is posted as a reply in the thread of the original alert, and the run
 - **It is polling, not event-driven.** The trigger runs every 2 minutes, so worst-case ingestion latency is one full interval. There is no webhook path.
 - **It reads one channel.** The workflow is configured against a single Slack channel; multiple channels means multiple copies.
 - **Correlation is textual.** Related-alert detection is substring matching over recent channel messages, not a topology or dependency model.
+- **Nine of its alert types are unreachable.** The runbook mapping covers 21 alert types but the parser can only ever emit 12, so those runbooks can never be selected — including `FLAP_DETECTION`, which leaves the classifier's inherently-noisy branch as dead code. `test/coverage.test.js` pins this so closing the gap shows up as a failing test.
 - **The runbook catalog here is synthetic.** See [Note on data](#note-on-data).
 
 ## Installation

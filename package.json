@@ -1,0 +1,13 @@
+{
+  "name": "noc-bot",
+  "version": "1.0.0",
+  "description": "Automated first-line triage for infrastructure alerts in a 24/7 NOC, built as a self-hosted n8n workflow.",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "node test/run.js",
+    "demo": "node src/index.js"
+  },
+  "keywords": ["n8n", "alert-triage", "incident-response", "observability", "datadog", "slack-bot", "sre", "aiops"],
+  "license": "MIT",
+  "engines": { "node": ">=18" }
+}

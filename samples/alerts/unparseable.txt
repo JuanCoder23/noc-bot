@@ -1,0 +1,1 @@
+Reminder: change freeze starts Friday 18:00 UTC. No production deploys over the weekend.

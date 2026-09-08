@@ -1,0 +1,11 @@
+[Triggered] RDS High Connections
+avg(last_10m):avg:aws.rds.database_connections{database_instance:orders-primary} > 800
+
+Value: 941
+Threshold: > 800
+
+Tags
+database_instance:orders-primary
+region: eu-west-1
+
+RUNBOOK-019: RDS High Connections

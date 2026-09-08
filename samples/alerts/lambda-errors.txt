@@ -1,0 +1,12 @@
+[Triggered] Lambda Errors
+sum(last_5m):sum:aws.lambda.errors{functionname:payments-settlement-worker}.as_count() > 10
+
+Value: 47
+Threshold: > 10
+
+Tags
+functionname:payments-settlement-worker
+region: us-west-2
+env:prod
+
+RUNBOOK-009: Lambda Invocations Errors

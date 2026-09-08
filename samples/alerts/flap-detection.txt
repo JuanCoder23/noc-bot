@@ -1,0 +1,10 @@
+[Warn] Flap detection - monitor unstable
+avg(last_5m):avg:aws.ecs.cpuutilization{servicename:notifications-api} > 70
+
+Value: 70.6
+Threshold: > 70
+
+Tags
+servicename:notifications-api
+region: us-east-1
+monitor-state:flapping

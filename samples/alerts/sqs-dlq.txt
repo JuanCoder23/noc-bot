@@ -1,0 +1,11 @@
+[Triggered] Messages available on SQS DLQ
+avg(last_5m):avg:aws.sqs.approximate_number_of_messages_visible{queuename:refunds-processor-dlq} > 0
+
+Value: 213
+Threshold: > 0
+
+Tags
+queuename:refunds-processor-dlq
+region: us-east-1
+
+RUNBOOK-011: Messages available on SQS DLQ

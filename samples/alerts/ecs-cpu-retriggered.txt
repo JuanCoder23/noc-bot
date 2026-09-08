@@ -1,0 +1,11 @@
+[Re-Triggered] High CPU on ECS service
+avg(last_15m):avg:aws.ecs.cpuutilization{servicename:checkout-api} > 85
+
+Value: 86.1
+Threshold: > 85
+
+Tags
+servicename:checkout-api
+region: us-east-1
+
+RUNBOOK-001: High CPU en servicio ECS
