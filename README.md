@@ -14,12 +14,101 @@ extracted from the workflow's code nodes into `src/`, so it runs and is tested
 without n8n, Datadog credentials, or a model API key.
 
 ```bash
-npm test     # 166 assertions, no dependencies
-npm run demo # trace one sample alert through every stage
+npm test       # 275 assertions, no dependencies
+npm run demo   # trace one sample alert through every stage
+npm run replay # replay a generated dataset through the whole pipeline, offline
 ```
 
 `npm run demo -- lambda-errors` traces any file in [`samples/alerts/`](samples/alerts).
 The enrichment calls are stubbed; everything else is the code that ran in production.
+
+### Running the whole pipeline against a synthetic dataset
+
+```bash
+npm run dataset   # generate a seeded dataset of synthetic alerts
+npm run replay    # push one through dedupe → gate → classify → enrich → prompt → message
+```
+
+`npm run replay` generates and replays in one step, writes a JSON report to
+`out/report.json`, and prints a summary. It makes **no network calls**:
+enrichment and the model are stubbed deterministically, so the run needs no
+Datadog credentials and no API key, and costs nothing.
+
+The generator is seeded — same seed, same dataset, byte for byte — so no
+dataset is committed to the repository. The seed is the artefact. It produces
+alerts in the shape `parseDatadogAlert` expects, covering the 12 alert types
+the parser can actually emit, and is parameterised by volume, time window, the
+mix of noise against incidents, and bursts of the same alert repeated to
+exercise all three deduplication layers.
+
+```bash
+npm run dataset -- --seed incident-night --count 500 --window 180 --noise 0.4
+npm run dataset -- --print 2          # show records instead of writing a file
+npm run replay  -- --single-pass      # one pass instead of replaying the 2-minute poll
+npm run replay  -- --help
+```
+
+By default the harness replays the real trigger rather than making a single
+pass: a read every 2 minutes over a 5-minute window, exactly as
+[`docs/architecture.md`](docs/architecture.md) describes it. The overlap is
+deliberate in production and reproduced here, which is why the replay reads
+far more records than the dataset contains — and why deduplication across runs
+gets exercised instead of assumed.
+
+#### What a run looks like
+
+> **These figures describe synthetic data.** They are properties of the
+> generator and of the pipeline's logic, not measurements of production
+> traffic. Nothing in this repository is derived from any real alert. The
+> output below is reproduced by `npm run replay -- --no-timings`, which uses
+> the default seed `noc-demo`.
+
+```
+SYNTHETIC REPLAY — seed "noc-demo", poll mode
+────────────────────────────────────────────────────────────────
+  333 generated records over 120 simulated minutes
+  63 polls every 120s over a 300s read window
+  835 reads, because the windows overlap on purpose
+
+  deduplication   358 survived, 477 dropped
+                  planted duplicates: exact_ts 143, exact_text 74, same_key 39
+                  re-reads across polls: 197, incidental collisions: 24
+
+  response gate   123 passed, 235 rejected
+                    90  recovered
+                    87  already_answered
+                    46  no_state
+                    12  slack_subtype
+
+  priority        (of the 123 that passed the gate)
+  P1              41   33.3%
+  P2              33   26.8%
+  P3              30   24.4%
+  NOISE           19   15.4%
+
+  reached diagnosis   104  (31.2% of generated records)
+  NOISE stopped early 19  — no enrichment call, no model call
+```
+
+Three things in that output are worth reading carefully, because they are
+properties of the pipeline rather than of the dataset:
+
+- **The NOISE share is not a tuning result.** NOISE is only reachable from a
+  `WARN` alert — the classifier caps anything in `TRIGGERED` or `RE-TRIGGERED`
+  at 69, below the NOISE threshold. Generating a dataset that is entirely
+  noise-shaped but entirely firing produces a NOISE count of zero, which is
+  the fail-safe described under [Design decisions](#fail-safe-classification-instead-of-accurate-classification)
+  doing its job. `test/replay.test.js` asserts exactly that.
+- **`already_answered` is the largest rejection category after recoveries**,
+  and it is almost entirely the overlapping read window catching the same
+  alert again. That is deduplication earning its place, not alerts being lost.
+- **Stage timings are not latency.** The report includes per-stage wall-clock
+  time, but with enrichment and the model stubbed it measures in-process work
+  only. Real latency is dominated by the 2-minute polling interval and by five
+  network calls per alert, neither of which is represented.
+
+The report carries all of this in its own `notes` field, so a figure lifted
+out of `out/report.json` travels with the caveats attached.
 
 ### Seeing it in n8n
 
@@ -42,6 +131,8 @@ The workflow is imported inactive, so nothing polls until you activate it.
 | `compose.yaml` | Runs n8n locally with the workflow already imported |
 | `workflows/NOC_bot.json` | The n8n export — import this to actually run the pipeline |
 | `src/` | The code nodes extracted as modules, so they can be read and tested |
+| `tools/synth/` | Seeded generator for synthetic Datadog alerts |
+| `tools/harness/` | Replays a dataset through the pipeline with enrichment and the model stubbed |
 | `test/` | Test suites and the dependency-free runner |
 | `samples/alerts/` | Synthetic Datadog alerts the tests and demo run against |
 | `scripts/validate-workflow.js` | CI guard: the export stays credential-free and its catalog stays synthetic |
@@ -222,6 +313,16 @@ This repository contains no employer or client data of any kind. Specifically:
 - **No identifiers.** No Slack channel IDs, member IDs, spreadsheet IDs, AWS account IDs, hostnames, internal endpoints, or service names.
 - **No names.** No employer name, client names, or colleague names.
 - **No operational data.** No captured alerts, logs, metrics, model outputs, or run logs.
+- **The alert dataset is generated, not captured.** Everything `tools/synth`
+  produces is invented: every service, queue, database, function, API, load
+  balancer and monitor name carries a `synth-` prefix, every alert text closes
+  with a `[SYNTHETIC DATA ...]` marker, every record is flagged `synthetic:
+  true`, stubbed evidence is tagged `source:synthetic-stub`, and the stubbed
+  model reply opens with `SYNTHETIC STUB - not a model output`. That marking is
+  designed to survive the whole pipeline, so it is still visible in the
+  rendered Slack message — the artefact most likely to end up in a screenshot.
+  Any figure quoted from a replay report must say it comes from synthetic
+  data.
 
 What is published is the pipeline: the workflow structure, the parsing and classification logic, and the design reasoning. The operational data the system produced, and a companion workflow that generated a weekly operations report, stayed with the employer and are not part of this repository.
 
@@ -232,7 +333,7 @@ What is published is the pipeline: the workflow structure, the parsing and class
 - [x] Lint the extracted modules — ESLint over `src/` and `test/`, enforced in CI
 - [ ] Deploy to k3s
 - [ ] Provision the infrastructure with Terraform
-- [ ] Rebuild against a synthetic alert dataset, so the pipeline is runnable end to end from this repository alone
+- [x] Rebuild against a synthetic alert dataset, so the pipeline is runnable end to end from this repository alone — `npm run dataset`, `npm run replay`
 
 ## License
 

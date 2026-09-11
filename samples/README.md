@@ -7,6 +7,13 @@ service, queue, and database names.
 
 No captured production alert is included here. See "Note on data" in the README.
 
+These nine are hand-written fixtures, chosen to pin specific parser behaviours,
+and they are what `npm test` and `npm run demo` run against. They are not the
+same thing as the generated dataset: `tools/synth` produces alerts in volume
+from a seed, covering all 12 alert types the parser can emit, and feeds
+`npm run replay`. Use these to reason about one parsing decision; use the
+generator to exercise the pipeline.
+
 | File | Exercises |
 |---|---|
 | `alerts/ecs-cpu-triggered.txt` | The common path: TRIGGERED, tags, runbook reference, monitor URL |
