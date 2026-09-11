@@ -82,10 +82,20 @@ module.exports = function (t) {
 
   // The degradation ladder: diagnoses are produced on partial evidence, which
   // is the behaviour the neverError settings in the workflow buy.
-  const e = report.evidence_available;
+  const e = report.evidence.reached_prompt;
   t.ok(e.metrics > 0 && e.metrics < p.diagnosed,
     'some diagnoses have metrics and some do not, so the degraded path is exercised');
   t.ok(e.events < p.diagnosed, 'and some are produced with no deploy correlation at all');
+
+  // The distinction docs/architecture.md says the production run log cannot
+  // make: a branch that returns data still contributes nothing when the
+  // summarizer finds nothing usable in it.
+  for (const branch of Object.keys(e)) {
+    t.ok(report.evidence.returned[branch] >= e[branch],
+      `${branch} cannot reach the prompt more often than it returned data`);
+  }
+  t.ok(report.evidence.returned.correlation > e.correlation,
+    'channel history always comes back, but only counts as correlation when it finds a similar alert');
 
   // ── the fail-safe cap, visible in the output ──────────────────────────
   // NOISE is only reachable from WARN: classifyPriority caps TRIGGERED and

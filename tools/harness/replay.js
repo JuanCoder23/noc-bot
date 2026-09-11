@@ -134,7 +134,13 @@ function replay(dataset, options) {
   const droppedByDedupe = { total: 0, planted: {}, re_read: 0, incidental: 0 };
   const gateRejections = {};
   const byPriority = { P1: 0, P2: 0, P3: 0, NOISE: 0 };
-  const evidence = { metrics: 0, logs: 0, events: 0, correlation: 0, aws_health: 0 };
+  // Two different questions, which docs/architecture.md notes the production
+  // run log cannot tell apart: did the call come back with anything, and did
+  // any of it actually reach the prompt. A metric series that arrives empty
+  // and one that never arrives are indistinguishable downstream by design, but
+  // the harness knows both, so it reports both.
+  const returned = { metrics: 0, logs: 0, events: 0, correlation: 0, aws_health: 0 };
+  const inPrompt = { metrics: 0, logs: 0, events: 0, correlation: 0, aws_health: 0 };
   const byType = {};
   const seenTsInEarlierPolls = new Set();
   const pollDetail = [];
@@ -213,10 +219,20 @@ function replay(dataset, options) {
       const enriched = clock.time('enrich', () => stubEnrichment(item, seed));
       counts.enriched++;
       for (const [branch, got] of Object.entries(enriched.stub_branches)) {
-        if (got) evidence[branch]++;
+        if (got) returned[branch]++;
       }
 
       const ctx = clock.time('enrich', () => buildEnrichedContext({ ...item, ...enriched }));
+
+      // What buildClaudePrompt will actually render, which is a stricter test
+      // than `available`: correlation is available whenever the channel
+      // returned any message at all, but only reaches the prompt when it found
+      // a similar one.
+      if (ctx.metrics.available) inPrompt.metrics++;
+      if (ctx.logs.available && ctx.logs.samples.length > 0) inPrompt.logs++;
+      if (ctx.events.available && ctx.events.deploys.length > 0) inPrompt.events++;
+      if (ctx.correlation.available && ctx.correlation.similar_count > 0) inPrompt.correlation++;
+      if (ctx.aws_health.available) inPrompt.aws_health++;
       const prompt = clock.time('prompt', () => buildClaudePrompt(ctx));
       counts.prompted++;
 
@@ -238,7 +254,7 @@ function replay(dataset, options) {
   }
 
   return buildReport(dataset, opts, {
-    counts, droppedByDedupe, gateRejections, byPriority, evidence, byType,
+    counts, droppedByDedupe, gateRejections, byPriority, returned, inPrompt, byType,
     polls, pollDetail, clock,
   });
 }
@@ -306,10 +322,17 @@ function buildReport(dataset, opts, r) {
       diagnosed: r.counts.diagnosed,
       messaged: r.counts.messaged,
     },
-    // How many of the diagnoses had each kind of evidence available. The
-    // pipeline degrades rather than failing when a branch returns nothing, so
-    // this is the only place a partial diagnosis is visible at all.
-    evidence_available: r.evidence,
+    // How many diagnoses each enrichment branch contributed to. The pipeline
+    // degrades rather than failing when a branch returns nothing, so this is
+    // the only place a partial diagnosis is visible at all.
+    evidence: {
+      returned: r.returned,
+      reached_prompt: r.inPrompt,
+      note: 'A branch can return data that still contributes nothing to the prompt — ' +
+        'channel history always comes back, but only counts as correlation when it ' +
+        'contains a similar alert. docs/architecture.md notes that the production run ' +
+        'log cannot tell these two apart; a replay can.',
+    },
     by_alert_type: r.byType,
     notes,
   };

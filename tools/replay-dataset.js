@@ -92,9 +92,11 @@ function summarize(report) {
   }
   console.log(`\n  reached diagnosis   ${p.diagnosed}  (${pct(p.diagnosed, p.ingested)} of generated records)`);
   console.log(`  NOISE stopped early ${p.noise_stopped}  — no enrichment call, no model call`);
-  console.log('\n  evidence available for those diagnoses');
-  for (const [branch, n] of Object.entries(report.evidence_available)) {
-    console.log(bar(branch, n, p.diagnosed));
+  console.log('\n  evidence reaching the prompt (of ' + p.diagnosed + ' diagnoses)');
+  for (const [branch, n] of Object.entries(report.evidence.reached_prompt)) {
+    const back = report.evidence.returned[branch];
+    const extra = back > n ? `  (${back} branches returned data)` : '';
+    console.log(bar(branch, n, p.diagnosed) + extra);
   }
   if (report.timings_ms) {
     const stages = Object.entries(report.timings_ms).filter(([k]) => k !== 'note');
