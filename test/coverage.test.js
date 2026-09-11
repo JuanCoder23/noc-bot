@@ -1,5 +1,4 @@
 'use strict';
-const { parseDatadogAlert } = require('../src/parseAlert');
 const { ALERT_TYPE_TO_RUNBOOK, KNOWN_RUNBOOKS, RUNBOOKS } = require('../src/runbooks');
 const { INHERENTLY_NOISY } = require('../src/classifyPriority');
 const fs = require('fs');

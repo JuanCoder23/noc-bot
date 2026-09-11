@@ -14,7 +14,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const { parseDatadogAlert, buildDDQuery, buildLogsQuery } = require('./parseAlert');
+const { buildDDQuery, buildLogsQuery } = require('./parseAlert');
 const { lookupRunbook } = require('./runbooks');
 const { dedupe, decide } = require('./dedupe');
 const { classifyPriority } = require('./classifyPriority');

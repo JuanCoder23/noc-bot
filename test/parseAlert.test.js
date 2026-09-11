@@ -72,7 +72,7 @@ module.exports = function (t) {
   // ---- every sample parses without throwing ---------------------------
   for (const n of names()) {
     let ok = true;
-    try { parseDatadogAlert(load(n)); } catch (e) { ok = false; }
+    try { parseDatadogAlert(load(n)); } catch { ok = false; }
     t.ok(ok, `${n} parses without throwing`);
   }
 };

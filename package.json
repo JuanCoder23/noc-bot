@@ -5,9 +5,25 @@
   "main": "src/index.js",
   "scripts": {
     "test": "node test/run.js",
+    "lint": "eslint .",
     "demo": "node src/index.js"
   },
-  "keywords": ["n8n", "alert-triage", "incident-response", "observability", "datadog", "slack-bot", "sre", "aiops"],
+  "keywords": [
+    "n8n",
+    "alert-triage",
+    "incident-response",
+    "observability",
+    "datadog",
+    "slack-bot",
+    "sre",
+    "aiops"
+  ],
   "license": "MIT",
-  "engines": { "node": ">=18" }
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.10.0"
+  }
 }

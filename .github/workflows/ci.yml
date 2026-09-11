@@ -30,3 +30,19 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validate the n8n workflow export
         run: node scripts/validate-workflow.js
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # Unlike the test job, this one has a dependency to install: eslint.
+      # `npm ci` installs exactly what package-lock.json pins, and fails if the
+      # lockfile and package.json disagree.
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint
+        run: npm run lint
