@@ -9,6 +9,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      # Without this, the first version to fail cancels the others, and a
+      # failure specific to one Node version can stay hidden behind an
+      # unrelated one that happened to finish first.
+      fail-fast: false
       matrix:
         node: [18, 20, 22]
     steps:
