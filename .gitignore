@@ -22,3 +22,7 @@ Thumbs.db
 # Node
 node_modules/
 npm-debug.log*
+
+# Generated synthetic datasets and replay reports. Regenerable from their
+# seed, so the seed is what gets recorded, not the output.
+out/

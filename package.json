@@ -6,7 +6,8 @@
   "scripts": {
     "test": "node test/run.js",
     "lint": "eslint .",
-    "demo": "node src/index.js"
+    "demo": "node src/index.js",
+    "dataset": "node tools/generate-dataset.js"
   },
   "keywords": [
     "n8n",
