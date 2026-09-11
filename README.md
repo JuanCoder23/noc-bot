@@ -14,7 +14,7 @@ extracted from the workflow's code nodes into `src/`, so it runs and is tested
 without n8n, Datadog credentials, or a model API key.
 
 ```bash
-npm test       # 275 assertions, no dependencies
+npm test       # 281 assertions, no dependencies
 npm run demo   # trace one sample alert through every stage
 npm run replay # replay a generated dataset through the whole pipeline, offline
 ```
