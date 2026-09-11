@@ -178,6 +178,12 @@ function generateDataset(params) {
         resource: built.resource, duplicate_of: null, duplicate_kind: null, burst_id: null,
       },
     };
+    // A small share of otherwise well-formed alerts arrives edited in place,
+    // which Slack marks with a subtype and the response gate refuses outright.
+    // These have to be alerts rather than chatter to test anything: the gate
+    // is an && chain evaluated in order, so a chatter message is already
+    // rejected on its missing state before the subtype is ever considered.
+    if (rng.chance(0.05)) origin.subtype = 'message_changed';
     staged.push(origin);
 
     if (!rng.chance(p.burstRatio)) continue;

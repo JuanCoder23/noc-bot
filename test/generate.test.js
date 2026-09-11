@@ -39,9 +39,11 @@ module.exports = function (t) {
   // Pins the PRNG itself. mulberry32 and the FNV-1a seed hash are part of the
   // contract: changing either silently invalidates every seed ever recorded,
   // including the one the README publishes.
-  t.eq(dataset.records[0].ts, '1767236400.000001', 'the first record of seed noc-demo is pinned');
-  t.eq(dataset.records[0].synth.alert_type, 'SQS_DLQ', 'and so is its type');
-  t.eq(dataset.records[0].synth.resource, 'synth-exports-dlq', 'and its resource');
+  const firstAlert = dataset.records.find((r) => r.synth.intent !== 'chatter');
+  t.eq(dataset.records.length, 333, 'seed noc-demo produces a pinned number of records');
+  t.eq(dataset.records[0].ts, '1767236409.000001', 'its first record is pinned');
+  t.eq(firstAlert.synth.alert_type, 'ECS_CPU', 'and so is the type of its first alert');
+  t.eq(firstAlert.synth.resource, 'synth-inventory-api', 'and that alert\'s resource');
 
   // Nothing reads the clock, so the simulated window is exact.
   const startSec = Math.floor(dataset.meta.params.startTime / 1000);
@@ -171,8 +173,16 @@ module.exports = function (t) {
   }
   t.ok(dataset.records.some((r) => r.synth.state === 'RECOVERED'), 'recoveries are generated');
   t.eq(recoveredAnswered, 0, 'and no recovery ever passes the response gate');
-  t.ok(dataset.meta.counts.with_subtype > 0, 'some channel noise arrives with a Slack subtype');
-  t.eq(subtypeAnswered, 0, 'and the gate rejects all of it on the subtype alone');
+  t.ok(dataset.meta.counts.with_subtype > 0, 'some records arrive with a Slack subtype');
+  t.eq(subtypeAnswered, 0, 'and the gate rejects all of them');
+
+  // The gate is an && chain evaluated in order, so a subtype on a chatter
+  // message proves nothing — the missing state rejects it first. Only a
+  // well-formed alert carrying a subtype reaches that condition.
+  const subtypedAlerts = dataset.records.filter((r) => r.subtype && r.synth.intent !== 'chatter');
+  t.ok(subtypedAlerts.length > 0, 'including well-formed alerts, which is what actually tests that condition');
+  t.ok(subtypedAlerts.every((r) => parseDatadogAlert(r.mensaje).alert_type !== null),
+    'those alerts parse cleanly, so the subtype is the only thing rejecting them');
 
   // ── parameters ────────────────────────────────────────────────────────
   const small = generateDataset({ seed: SEED, count: 10, burstRatio: 0, chatterRatio: 0 });
