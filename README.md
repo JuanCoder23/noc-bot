@@ -228,7 +228,8 @@ What is published is the pipeline: the workflow structure, the parsing and class
 ## Roadmap
 
 - [x] Containerize the n8n deployment with Docker — `docker compose up -d`, workflow pre-imported
-- [ ] CI in GitHub Actions — validate the workflow JSON and lint the code nodes
+- [x] CI in GitHub Actions — tests on Node 18/20/22, plus a guard that the workflow export stays credential-free and in sync with `src/`
+- [ ] Lint the extracted modules
 - [ ] Deploy to k3s
 - [ ] Provision the infrastructure with Terraform
 - [ ] Rebuild against a synthetic alert dataset, so the pipeline is runnable end to end from this repository alone
