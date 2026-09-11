@@ -21,10 +21,25 @@ npm run demo # trace one sample alert through every stage
 `npm run demo -- lambda-errors` traces any file in [`samples/alerts/`](samples/alerts).
 The enrichment calls are stubbed; everything else is the code that ran in production.
 
+### Seeing it in n8n
+
+```bash
+docker compose up -d
+open http://localhost:5678
+```
+
+This starts n8n with `workflows/NOC_bot.json` already imported — no manual import,
+and no dependency on the host's Node version. n8n asks you to create a local owner
+account on first visit; it is stored in the container volume and goes no further.
+The workflow is imported inactive, so nothing polls until you activate it.
+
+`docker compose down` stops it; add `-v` to discard the n8n database as well.
+
 ### Repository layout
 
 | Path | What |
 |---|---|
+| `compose.yaml` | Runs n8n locally with the workflow already imported |
 | `workflows/NOC_bot.json` | The n8n export — import this to actually run the pipeline |
 | `src/` | The code nodes extracted as modules, so they can be read and tested |
 | `test/` | Test suites and the dependency-free runner |
@@ -157,7 +172,7 @@ The output is posted as a reply in the thread of the original alert, and the run
    cp .env.example .env
    ```
 
-3. Import `workflows/NOC_bot.json` in n8n via **Workflows → Import from File**. The workflow is exported inactive.
+3. Import `workflows/NOC_bot.json` in n8n via **Workflows → Import from File**. The workflow is exported inactive. (`docker compose up -d` does this step for you against a local n8n.)
 
 4. Replace the placeholders the export ships with. Each is a literal string in the workflow, so searching for `YOUR_` finds all of them.
 
@@ -212,7 +227,7 @@ What is published is the pipeline: the workflow structure, the parsing and class
 
 ## Roadmap
 
-- [ ] Containerize the n8n deployment with Docker
+- [x] Containerize the n8n deployment with Docker — `docker compose up -d`, workflow pre-imported
 - [ ] CI in GitHub Actions — validate the workflow JSON and lint the code nodes
 - [ ] Deploy to k3s
 - [ ] Provision the infrastructure with Terraform

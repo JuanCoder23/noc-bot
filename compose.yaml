@@ -1,0 +1,51 @@
+# Brings up n8n locally with the workflow already imported.
+#
+#   docker compose up -d
+#   open http://localhost:5678
+#
+# The workflow is imported inactive, and no credentials are baked into the
+# image or this file. Put your own keys in .env (see .env.example); it is
+# gitignored, and docker compose picks it up automatically. Without it the
+# stack still starts — the workflow just cannot reach any external API.
+
+name: noc-bot
+
+x-n8n-image: &n8n-image docker.n8n.io/n8nio/n8n:2.38.6
+
+services:
+  # One-shot: loads workflows/NOC_bot.json into n8n's database, then exits.
+  # The main service waits for it to finish so the first boot already has it.
+  import:
+    image: *n8n-image
+    entrypoint: /bin/sh
+    command: -c "n8n import:workflow --separate --input=/workflows"
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./workflows:/workflows:ro
+
+  n8n:
+    image: *n8n-image
+    depends_on:
+      import:
+        condition: service_completed_successfully
+    ports:
+      - "5678:5678"
+    environment:
+      # http://localhost needs this; n8n refuses to set a secure cookie otherwise
+      - N8N_SECURE_COOKIE=false
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - N8N_VERSION_NOTIFICATIONS_ENABLED=false
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE:-UTC}
+      # Read from .env when present, empty otherwise.
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - DD_API_KEY=${DD_API_KEY:-}
+      - DD_APP_KEY=${DD_APP_KEY:-}
+      - DD_SITE=${DD_SITE:-datadoghq.com}
+      - SLACK_CHANNEL_ID=${SLACK_CHANNEL_ID:-}
+      - GOOGLE_SHEET_ID=${GOOGLE_SHEET_ID:-}
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./workflows:/workflows:ro
+
+volumes:
+  n8n_data:
