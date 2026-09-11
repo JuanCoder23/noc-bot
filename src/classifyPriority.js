@@ -56,10 +56,10 @@ function classifyPriority(parsed, state) {
   sd.recentFires[alertKey].count    = (sd.recentFires[alertKey].count || 0) + 1;
   sd.recentFires[alertKey].lastSeen = now;
 
-  // // TRIGGERED y RE-TRIGGERED nunca pueden ser NOISE
-  // if (parsed.state === 'TRIGGERED' || parsed.state === 'RE-TRIGGERED') {
-  //   score = Math.min(score, 69);
-  // }
+  // TRIGGERED y RE-TRIGGERED nunca pueden ser NOISE
+  if (parsed.state === 'TRIGGERED' || parsed.state === 'RE-TRIGGERED') {
+    score = Math.min(score, 69);
+  }
 
   score = Math.max(0, Math.min(100, score));
   const priority =
