@@ -14,7 +14,7 @@ function makeT() {
   };
 }
 
-const suites = ['parseAlert', 'classifyPriority', 'dedupe', 'enrich', 'formatMessage', 'coverage', 'generate'];
+const suites = ['parseAlert', 'classifyPriority', 'dedupe', 'enrich', 'formatMessage', 'coverage', 'generate', 'stubs'];
 
 let totalPass = 0, totalFail = 0;
 console.log('noc-bot — tests\n');
