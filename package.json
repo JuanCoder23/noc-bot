@@ -6,7 +6,9 @@
   "scripts": {
     "test": "node test/run.js",
     "lint": "eslint .",
-    "demo": "node src/index.js"
+    "demo": "node src/index.js",
+    "dataset": "node tools/generate-dataset.js",
+    "replay": "node tools/replay-dataset.js"
   },
   "keywords": [
     "n8n",
@@ -20,7 +22,7 @@
   ],
   "license": "MIT",
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

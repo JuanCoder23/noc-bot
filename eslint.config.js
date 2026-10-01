@@ -1,6 +1,9 @@
 const js = require('@eslint/js');
 
 module.exports = [
+  // Generated datasets and replay reports. Reproducible from a seed, never
+  // committed, and not source.
+  { ignores: ['out/**'] },
    js.configs.recommended,
   {
     languageOptions: {

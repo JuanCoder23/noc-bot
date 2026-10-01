@@ -66,7 +66,7 @@ function dedupe(messages, state, now) {
  * before enrichment, the model call, or the Slack reply. A run that aborts
  * later suppresses the alert for the TTL without having replied. This is the
  * known failure mode documented in docs/architecture.md; the behaviour is kept
- * here as it runs in production rather than quietly fixed.
+ * here as the workflow has it rather than quietly fixed.
  */
 function decide(msg, state, now) {
   // In the workflow dedupe() always runs first and initialises this; guard so

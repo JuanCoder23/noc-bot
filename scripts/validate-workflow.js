@@ -1,8 +1,9 @@
 'use strict';
 
 // Guards the published export: it must stay valid JSON, it must not regain any
-// real credential or identifier, and its code nodes must stay in sync with the
-// modules in src/ that the tests exercise.
+// real credential or identifier, and the code nodes that src/ mirrors must
+// still exist, with each module keeping its entry point. It does not compare
+// the code itself, so it cannot prove the two are identical.
 
 const fs = require('fs');
 const path = require('path');
