@@ -9,7 +9,7 @@
 //
 // The enrichment stage is stubbed with fixed responses. Everything else —
 // parsing, deduplication, the response gate, scoring, prompt assembly and
-// message rendering — is the code that runs in production.
+// message rendering — is the same module code the tests exercise.
 
 const fs = require('fs');
 const path = require('path');
